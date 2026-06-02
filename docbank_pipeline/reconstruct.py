@@ -73,6 +73,8 @@ _FONT_CANDIDATES = [
     "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
 ]
 
+_REGISTERED: set[str] = set()
+
 
 
 def _resolve_font(font_path) -> str:
