@@ -51,11 +51,24 @@ except ImportError as e:  # pragma: no cover
 # Fonts (Unicode / Korean)
 # --------------------------------------------------------------------------
 _FONT_CANDIDATES = [
-    r"C:\Windows\Fonts\malgun.ttf",       # Malgun Gothic (Korean) - Windows
-    r"C:\Windows\Fonts\NanumGothic.ttf",  # Nanum Gothic (Korean), if installed
-    r"C:\Windows\Fonts\gulim.ttc",        # Gulim (Korean), older Windows
-    r"C:\Windows\Fonts\arialuni.ttf",     # Arial Unicode MS, if present
+    # ----- Linux (Hugging Face / Render / Docker) -----
+    "/usr/share/fonts/truetype/nanum/NanumGothic.ttf",
+    "/usr/share/fonts/truetype/nanum/NanumGothicBold.ttf",
+    "/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc",
+    "/usr/share/fonts/opentype/noto/NotoSerifCJK-Regular.ttc",
+    "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
+
+    # ----- macOS -----
+    "/System/Library/Fonts/AppleSDGothicNeo.ttc",
+    "/Library/Fonts/Arial Unicode.ttf",
+
+    # ----- Windows -----
+    r"C:\Windows\Fonts\malgun.ttf",
+    r"C:\Windows\Fonts\NanumGothic.ttf",
+    r"C:\Windows\Fonts\gulim.ttc",
+    r"C:\Windows\Fonts\arialuni.ttf",
 ]
+
 _REGISTERED: set[str] = set()
 
 
