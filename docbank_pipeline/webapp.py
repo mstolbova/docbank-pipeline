@@ -26,6 +26,7 @@ import logging
 import shutil
 import time
 import uuid
+import zipfile
 from pathlib import Path
 from typing import Any
 
@@ -181,6 +182,14 @@ _INDEX_HTML = """<!doctype html>
     </label>
 
     <div class="opts">
+      <label title="Choose the output PDF type">Output type
+        <select name="pdf_mode" style="padding: 4px 8px;">
+            <option value="searchable" selected>Searchable PDF</option>
+            <option value="reconstructed">Reconstructed PDF</option>
+            <option value="both">Both versions</option>
+        </select>
+      </label>
+
       <label title="YOLO detection threshold">Detect conf &ge;
         <input type="number" name="conf" min="0.05" max="0.95" step="0.05" value="0.25">
       </label>
@@ -582,6 +591,10 @@ def create_app(cfg: PipelineConfig | None = None):
         do_text = "text_ocr" in request.form
         do_formula = "formula_ocr" in request.form
         use_cache = "use_cache" in request.form
+        pdf_mode = request.form.get("pdf_mode", "searchable")
+        if pdf_mode not in {"searchable", "reconstructed", "both"}:
+            pdf_mode = "searchable"
+
 
         job_id = uuid.uuid4().hex[:12]
         job_dir = web_root / job_id
@@ -645,27 +658,66 @@ def create_app(cfg: PipelineConfig | None = None):
             }, indent=2, ensure_ascii=False),
             encoding="utf-8",
         )
-
-        # Build a SEARCHABLE PDF: each source page image is drawn as the page
-        # background, with the recognised text overlaid as an invisible,
-        # selectable layer. The visible output is pixel-identical to the input
-        # (so Korean/Hanja/figures are preserved exactly), and the text is
-        # Ctrl-F searchable.
+        
+        # Build output PDF according to the selected mode:
+        # 1) searchable: keeps the original page image as background and overlays
+        #    invisible selectable/searchable text.
+        # 2) reconstructed: creates a clean white PDF page and redraws detected regions
+        #    as native PDF content.
+        # 3) both: returns a ZIP archive with both PDF versions.
         try:
-            from .to_pdf import detections_to_searchable_pdf
             all_dets = [d for p in pages for d in p["detections"]]
-            pdf_path = job_dir / "result.pdf"
-            detections_to_searchable_pdf(all_dets, pdf_path)
+
+            searchable_pdf = job_dir / "searchable_document.pdf"
+            reconstructed_pdf = job_dir / "reconstructed_document.pdf"
+
+            if pdf_mode in {"searchable", "both"}:
+                from .to_pdf import detections_to_searchable_pdf
+                detections_to_searchable_pdf(all_dets, searchable_pdf)
+
+            if pdf_mode in {"reconstructed", "both"}:
+                from .reconstruct import detections_to_reconstructed_pdf
+                detections_to_reconstructed_pdf(
+                    all_dets,
+                    reconstructed_pdf,
+                    render_formulas=True,
+                )
+
+            if pdf_mode == "searchable":
+                return send_file(
+                    searchable_pdf,
+                    as_attachment=True,
+                    download_name="searchable_document.pdf",
+                    mimetype="application/pdf",
+                )
+
+            if pdf_mode == "reconstructed":
+                return send_file(
+                    reconstructed_pdf,
+                    as_attachment=True,
+                    download_name="reconstructed_document.pdf",
+                    mimetype="application/pdf",
+                )
+
+            # If the user selected "Both versions", return a ZIP file.
+            zip_path = job_dir / "pdf_versions.zip"
+            with zipfile.ZipFile(zip_path, "w", compression=zipfile.ZIP_DEFLATED) as zf:
+                zf.write(searchable_pdf, arcname="searchable_document.pdf")
+                zf.write(reconstructed_pdf, arcname="reconstructed_document.pdf")
+                zf.write(job_dir / "results.json", arcname="results.json")
+
+            return send_file(
+                zip_path,
+                as_attachment=True,
+                download_name="pdf_versions.zip",
+                mimetype="application/zip",
+            )
+
         except Exception as e:
             log.exception("PDF build failed for job %s", job_id)
             return (f"Recognition succeeded but PDF build failed: {e}", 500)
 
-        return send_file(
-            pdf_path,
-            as_attachment=True,
-            download_name="reconstructed_document.pdf",
-            mimetype="application/pdf",
-        )
+
 
     @app.route("/jobs/<job_id>/results", methods=["GET"])
     @app.route("/jobs/<job_id>", methods=["GET"])
