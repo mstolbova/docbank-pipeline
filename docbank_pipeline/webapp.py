@@ -936,15 +936,35 @@ def create_app(cfg: PipelineConfig | None = None):
             "elapsed_seconds": round(elapsed, 2),
             "pages": pages,
         }
-
+        #
         (job_dir / "results.json").write_text(
             json.dumps(result_payload, indent=2, ensure_ascii=False),
             encoding="utf-8",
         )
-
+        
         # Build requested PDF output.
         try:
-            all_dets = [d for p in pages for d in p["detections"]]
+            all_dets = []
+
+            for p in pages:
+                page_dets = list(p.get("detections") or [])
+
+                if page_dets:
+                    all_dets.extend(page_dets)
+                else:
+                    # Placeholder so PDF builders still create this page
+                    # even if YOLO found no detections on it.
+                    all_dets.append(
+                        {
+                            "image": p["image"],
+                            "bbox": [0, 0, 1, 1],
+                            "class_name": "text",
+                            "confidence": 0.0,
+                            "recognized": "",
+                            "crop_path": None,
+                        }
+                    )
+
 
             if pdf_mode == "searchable":
                 from .to_pdf import detections_to_searchable_pdf
