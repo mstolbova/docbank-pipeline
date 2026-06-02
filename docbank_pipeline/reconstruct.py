@@ -51,12 +51,28 @@ except ImportError as e:  # pragma: no cover
 # Fonts (Unicode / Korean)
 # --------------------------------------------------------------------------
 _FONT_CANDIDATES = [
-    r"C:\Windows\Fonts\malgun.ttf",       # Malgun Gothic (Korean) - Windows
-    r"C:\Windows\Fonts\NanumGothic.ttf",  # Nanum Gothic (Korean), if installed
-    r"C:\Windows\Fonts\gulim.ttc",        # Gulim (Korean), older Windows
-    r"C:\Windows\Fonts\arialuni.ttf",     # Arial Unicode MS, if present
+    # Windows Korean / Unicode fonts
+    r"C:\Windows\Fonts\malgun.ttf",
+    r"C:\Windows\Fonts\malgunbd.ttf",
+    r"C:\Windows\Fonts\NanumGothic.ttf",
+    r"C:\Windows\Fonts\gulim.ttc",
+    r"C:\Windows\Fonts\batang.ttc",
+    r"C:\Windows\Fonts\arialuni.ttf",
+
+    # macOS Korean / Unicode fonts
+    "/System/Library/Fonts/AppleSDGothicNeo.ttc",
+    "/System/Library/Fonts/Supplemental/AppleGothic.ttf",
+    "/Library/Fonts/Arial Unicode.ttf",
+
+    # Linux / Docker / Render fonts
+    "/usr/share/fonts/truetype/nanum/NanumGothic.ttf",
+    "/usr/share/fonts/truetype/nanum/NanumGothicBold.ttf",
+    "/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc",
+    "/usr/share/fonts/opentype/noto/NotoSansCJK-Bold.ttc",
+    "/usr/share/fonts/truetype/noto/NotoSansCJK-Regular.ttc",
+    "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
 ]
-_REGISTERED: set[str] = set()
+
 
 
 def _resolve_font(font_path) -> str:
