@@ -32,6 +32,8 @@ ENV PYTHONUNBUFFERED=1 \
 RUN apt-get update && apt-get install -y --no-install-recommends \
         libglib2.0-0 libgl1 libgomp1 libsm6 libxext6 libxrender1 \
         ca-certificates curl \
+        fonts-nanum
+        fonts-noto-cjk
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
